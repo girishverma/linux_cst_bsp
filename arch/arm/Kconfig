@@ -347,6 +347,17 @@ config ARCH_VERSATILE
 	help
 	  This enables support for ARM Ltd Versatile board.
 
+config ARCH_CST
+	bool "CST Custom SOC/ASIC Virtual Platforms"
+	select ARM_AMBA
+	select ARM_TIMER_SP804
+	select ARM_VIC
+	select CLKDEV_LOOKUP
+	select GENERIC_CLOCKEVENTS
+	select HAVE_MACH_CLKDEV
+	help
+	  This enables support for CircuitSutra Virtual Platforms based on Custom Boards.
+
 config ARCH_AT91
 	bool "Atmel AT91"
 	select ARCH_REQUIRE_GPIOLIB
@@ -1016,6 +1027,8 @@ source "arch/arm/mach-u300/Kconfig"
 source "arch/arm/mach-ux500/Kconfig"
 
 source "arch/arm/mach-versatile/Kconfig"
+
+source "arch/arm/mach-cst/Kconfig"
 
 source "arch/arm/mach-vexpress/Kconfig"
 source "arch/arm/plat-versatile/Kconfig"
