@@ -18,7 +18,7 @@
 #include <asm/mach/map.h>
 #include <asm/mach/time.h>
 #include <asm/irq.h>
-#include <asm/hardware/vic.h>
+#include <linux/irqchip/arm-vic.h>
 #include <asm/hardware/arm_timer.h>
 #include <asm/hardware/timer-sp.h>
 

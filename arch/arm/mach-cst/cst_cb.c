@@ -132,7 +132,7 @@ void __init cst_cb_init_early(void) {
 
 
 // Linux EVENT-fd & Timer-fd Counter init using sp804 <with IRQ>.
-static void __init cst_cb_timer_init(void)
+void __init cst_cb_timer_init(void)
 {
     // Turn OFF timers initially.
     writel(0, VA_TIMER_0_BASE + 0x8);
@@ -140,9 +140,6 @@ static void __init cst_cb_timer_init(void)
     // Free Running Timer as Clock Source and Scheduler Source.
 	sp804_clockevents_init(VA_TIMER_0_BASE, INTR_TIMER_0, "timer0");
 }
-struct sys_timer cst_cb_timer = {
-	.init		= cst_cb_timer_init,
-};
 
 
 
@@ -152,8 +149,7 @@ MACHINE_START(CST_CB, "CircuitSutra Custom_Board")
 	.map_io		    = cst_cb_map_io,
 	.init_early	    = cst_cb_init_early,
 	.init_irq	    = cst_cb_init_irq,
-	.handle_irq	    = vic_handle_irq,
-	.timer		    = &cst_cb_timer,
+	.init_time	    = cst_cb_timer_init,
 	.init_machine	= cst_cb_init,
 	.restart	    = NULL,
 MACHINE_END
