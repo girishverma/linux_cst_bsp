@@ -6,6 +6,10 @@
  */
 #include "core.h"
 
+#include <linux/platform_device.h>
+#include <linux/irq.h>
+
+
 
 // MEMORY MAP : VIC, UART, RTC, SP804.
 static struct map_desc cst_cb_io_desc[] __initdata = {
@@ -53,13 +57,73 @@ static struct amba_device *amba_devices[] __initdata = {
 	&uart0_device,
 	&rtc_device,
 };
+
+#define XHCI_USB_DEVICE_SUPPORTED      	   256
+#define XHCI_HCS_DOORBELL_OFFSET           2048 
+#define XHCI_HCS_RUN_TIME_REG_OFFSET       1024 
+
+
+#ifdef CONFIG_USB_OTG
+#define CST_XHCI_BASE_ADDRESS 0x30000000 + 0x100
+#else
+#define CST_XHCI_BASE_ADDRESS 0x30000000 
+#endif
+
+#define CST_XHCI_END_ADDRESS  ((XHCI_USB_DEVICE_SUPPORTED*4) + XHCI_HCS_DOORBELL_OFFSET + CST_XHCI_BASE_ADDRESS)
+#define CST_XHCI_SIZE                 (CST_XHCI_END_ADDRESS - CST_XHCI_BASE_ADDRESS)
+#define CST_XHCI_IRQ          (32 + 11) //using GIC
+
+
+static struct resource cst_xhci_resources[] = {
+        [0] = {
+                .start  = CST_XHCI_BASE_ADDRESS,  /* Base address of Device */
+                .end    =  CST_XHCI_END_ADDRESS,
+                .flags  = IORESOURCE_MEM,
+        },
+        [1] = {
+                //.start  =  irq_num, ///< Intrupt line given to USB dev controller  in our model
+                .start  = CST_XHCI_IRQ, ///< Interrupt line used by UDC
+                .end    = CST_XHCI_IRQ,
+                .flags  = IORESOURCE_IRQ,
+        },
+};
+
+
+static void cst_xhci_release(struct device *dev)
+{
+
+}
+
+static u64 cst_xhci_dmamask = 0xffffffffUL;
+
+
+
+
+static struct platform_device cst_xhci_pdev = {
+        .name = "cst_xhci",
+        .id = -1,
+        .num_resources = ARRAY_SIZE(cst_xhci_resources),
+        .resource = cst_xhci_resources,
+        .dev = {
+                .release  = cst_xhci_release,
+                .dma_mask  = &cst_xhci_dmamask,
+                .coherent_dma_mask = 0xffffffff, //All 32 bit range 
+
+        },
+};
+
+
 void __init cst_cb_init(void)
 {
 	int i;
+	int ret;
 
 	for (i = 0; i < ARRAY_SIZE(amba_devices); i++) {
 		struct amba_device *d = amba_devices[i];
 		amba_device_register(d, &iomem_resource);
+	}
+	if ((platform_device_register(&cst_xhci_pdev)) < 0) {
+		printk(" Platform device register Fail \n"); 
 	}
 }
 
