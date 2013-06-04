@@ -2126,12 +2126,14 @@ static int xhci_setup_port_arrays(struct xhci_hcd *xhci, gfp_t flags)
 	int i, j, port_index;
 
 	addr = &xhci->cap_regs->hcc_params;
+	#if 0
 	offset = XHCI_HCC_EXT_CAPS(xhci_readl(xhci, addr));
 	if (offset == 0) {
 		xhci_err(xhci, "No Extended Capability registers, "
 				"unable to set up roothub.\n");
 		return -ENODEV;
 	}
+	#endif
 
 	num_ports = HCS_MAX_PORTS(xhci->hcs_params1);
 	xhci->port_array = kzalloc(sizeof(*xhci->port_array)*num_ports, flags);
@@ -2150,6 +2152,7 @@ static int xhci_setup_port_arrays(struct xhci_hcd *xhci, gfp_t flags)
 			INIT_LIST_HEAD(&bw_table->interval_bw[j].endpoints);
 	}
 
+	#if 0
 	/*
 	 * For whatever reason, the first capability offset is from the
 	 * capability register base, not from the HCCPARAMS register.
@@ -2173,6 +2176,10 @@ static int xhci_setup_port_arrays(struct xhci_hcd *xhci, gfp_t flags)
 		 */
 		addr += offset;
 	}
+	#else
+	xhci->port_array[0] = 0x2;
+	xhci->num_usb2_ports++;
+	#endif
 
 	if (xhci->num_usb2_ports == 0 && xhci->num_usb3_ports == 0) {
 		xhci_warn(xhci, "No ports on the roothubs?\n");

@@ -28,7 +28,8 @@ config USB_XHCI_HCD
 if USB_XHCI_HCD
 
 config USB_XHCI_PLATFORM
-	tristate
+	tristate "xHCI HCD (USB 3.0) support Platform"
+	
 
 config USB_XHCI_HCD_DEBUGGING
 	bool "Debugging for the xHCI host controller"

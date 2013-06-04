@@ -81,6 +81,7 @@ static void xhci_usb2_hub_descriptor(struct usb_hcd *hcd, struct xhci_hcd *xhci,
 	u32 portsc;
 	unsigned int i;
 
+	printk(" Inside %s \n", __FUNCTION__);
 	ports = xhci->num_usb2_ports;
 
 	xhci_common_hub_descriptor(xhci, desc, ports);
@@ -133,6 +134,7 @@ static void xhci_usb3_hub_descriptor(struct usb_hcd *hcd, struct xhci_hcd *xhci,
 	u32 portsc;
 	unsigned int i;
 
+	printk(" Inside %s \n", __FUNCTION__);
 	ports = xhci->num_usb3_ports;
 	xhci_common_hub_descriptor(xhci, desc, ports);
 	desc->bDescriptorType = USB_DT_SS_HUB;
@@ -158,7 +160,7 @@ static void xhci_usb3_hub_descriptor(struct usb_hcd *hcd, struct xhci_hcd *xhci,
 static void xhci_hub_descriptor(struct usb_hcd *hcd, struct xhci_hcd *xhci,
 		struct usb_hub_descriptor *desc)
 {
-
+	printk(" Inside %s \n", __FUNCTION__);
 	if (hcd->speed == HCD_USB3)
 		xhci_usb3_hub_descriptor(hcd, xhci, desc);
 	else

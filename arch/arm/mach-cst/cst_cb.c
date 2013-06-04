@@ -100,7 +100,7 @@ static u64 cst_xhci_dmamask = 0xffffffffUL;
 
 
 static struct platform_device cst_xhci_pdev = {
-        .name = "cst_xhci",
+        .name = "xhci-hcd",
         .id = -1,
         .num_resources = ARRAY_SIZE(cst_xhci_resources),
         .resource = cst_xhci_resources,

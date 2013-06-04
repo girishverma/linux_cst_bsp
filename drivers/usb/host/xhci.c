@@ -55,6 +55,9 @@ MODULE_PARM_DESC(link_quirk, "Don't clear the chain bit on a link TRB");
 int xhci_handshake(struct xhci_hcd *xhci, void __iomem *ptr,
 		      u32 mask, u32 done, int usec)
 {
+	#if 0
+	return xhci_readl(xhci, ptr);
+	#else
 	u32	result;
 
 	do {
@@ -67,7 +70,10 @@ int xhci_handshake(struct xhci_hcd *xhci, void __iomem *ptr,
 		udelay(1);
 		usec--;
 	} while (usec > 0);
+	printk(" XHCI_HANDSHAKE result = %x \n",result);
+	printk(" XHCI_HANDSHAKE VM(ptr) = %x PH(ptr) = %x \n",ptr, __virt_to_phys((unsigned long)(ptr)));
 	return -ETIMEDOUT;
+	#endif
 }
 
 /*
@@ -105,6 +111,7 @@ int xhci_halt(struct xhci_hcd *xhci)
 
 	ret = xhci_handshake(xhci, &xhci->op_regs->status,
 			STS_HALT, STS_HALT, XHCI_MAX_HALT_USEC);
+	//ret = 0;
 	if (!ret) {
 		xhci->xhc_state |= XHCI_STATE_HALTED;
 		xhci->cmd_ring_state = CMD_RING_STATE_STOPPED;
