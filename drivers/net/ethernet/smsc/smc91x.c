@@ -62,7 +62,7 @@ static const char version[] =
 
 /* Debugging level */
 #ifndef SMC_DEBUG
-#define SMC_DEBUG		0
+#define SMC_DEBUG		5
 #endif
 
 

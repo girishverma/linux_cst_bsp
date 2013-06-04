@@ -4,7 +4,8 @@ menu "CircuitSutra Custom Board"
 config ARCH_CST_CB
 	bool "CircuitSutra ARM CORTEX-A9 based Custom Minimal Board."
 	default y
-	select CPU_V7
+	select CPU_V7 
+	select NETDEVICES
 	help
 	  Include support for the Custom Virtual Platform with ARM cortex-A9 core.
 endmenu
