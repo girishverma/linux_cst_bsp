@@ -8,7 +8,7 @@
 
 #include <linux/platform_device.h>
 #include <linux/irq.h>
-// MEMORY MAP : VIC, UART, RTC, SP804.
+// MEMORY MAP : VIC, UART, RTC, SP804, CLCDC.
 static struct map_desc cst_cb_io_desc[] __initdata = { {
 		.virtual	=   IO_ADDRESS (CST_CB_VIC_BASE),
 		.pfn		= __phys_to_pfn(CST_CB_VIC_BASE),
@@ -29,6 +29,11 @@ static struct map_desc cst_cb_io_desc[] __initdata = { {
 		.pfn		= __phys_to_pfn(CST_CB_SP804_0_BASE),
 		.length		= SZ_4K,
 		.type		= MT_DEVICE
+	}, {
+		.virtual	=   IO_ADDRESS (CST_CB_CLCDC_BASE),
+		.pfn		= __phys_to_pfn(CST_CB_CLCDC_BASE),
+		.length		= SZ_4K,
+		.type		= MT_DEVICE
 	},
 };
 void __init cst_cb_map_io(void) {
@@ -47,9 +52,15 @@ static AMBA_APB_DEVICE(uart0,
                        0,
                        CST_CB_UART_0_BASE, {INTR_UART_0},
                        NULL);
+static AMBA_APB_DEVICE(clcdc,
+                       "dev:a0",
+                       0,
+                       CST_CB_UART_0_BASE, {INTR_CLCDC},
+                       NULL);
 static struct amba_device *amba_devices[] __initdata = {
 	&uart0_device,
 	&rtc_device,
+	//&clcdc_device,
 };
 
 #define XHCI_USB_DEVICE_SUPPORTED      	   256
@@ -71,6 +82,14 @@ static struct amba_device *amba_devices[] __initdata = {
 #define CST_SMC91C111_BASE_ADDRESS  0x101e9000
 #define CST_SMC91C111_END_ADDRESS   0x101e9400
 #define CST_SMC91C111_IRQ           (32 +15) // Using GIC
+
+#if 0
+
+#define CST_CLCDC_BASE_ADDRESS  0x20000000
+#define CST_CLCDC_END_ADDRESS   0x20000fff
+#define CST_CLCDC_IRQ           (32 +16) // Using GIC
+
+#endif
 
 static struct resource cst_xhci_resources[] = {
         [0] = {
@@ -101,6 +120,21 @@ static struct resource smc91c111_resources[] = {
                 .flags  = IORESOURCE_IRQ,
         },
 };
+#if 0
+static struct resource cst_clcdc_resources[] = {
+        [0] = {
+                .start  = CST_CLCDC_BASE_ADDRESS,  /* Base address of Device */
+                .end    = CST_CLCDC_END_ADDRESS,
+                .flags  = IORESOURCE_MEM,
+        },
+        [1] = {
+                //.start  =  irq_num, ///< Intrupt line given to USB dev controller  in our model
+                .start  = CST_CLCDC_IRQ, ///< Interrupt line used by UDC
+                .end    = CST_CLCDC_IRQ,
+                .flags  = IORESOURCE_IRQ,
+        },
+};
+#endif
 static void cst_xhci_release(struct device *dev) {
 
 }
@@ -131,8 +165,18 @@ static struct platform_device smc_91c111_pdev = {
                 .release  = smc91c111_release,
         },
 };
+#if 0
+static struct platform_device cst_clcdc_pdev = {
+        .name = "cst_clcdc",
+        .id = -1,
+        .num_resources = ARRAY_SIZE(cst_clcdc_resources),
+        .resource = cst_clcdc_resources,
+        .dev = {
+		//[TODO]
 
-
+        },
+};
+#endif
 void __init cst_cb_init(void) {
 	int i;
 	int ret;
