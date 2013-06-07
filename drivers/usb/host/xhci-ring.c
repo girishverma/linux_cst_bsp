@@ -2372,11 +2372,13 @@ static int handle_tx_event(struct xhci_hcd *xhci,
 	case COMP_SUCCESS:
 		if (EVENT_TRB_LEN(le32_to_cpu(event->transfer_len)) == 0)
 			break;
+		#if 0
 		if (xhci->quirks & XHCI_TRUST_TX_LENGTH)
 			trb_comp_code = COMP_SHORT_TX;
 		else
 			xhci_warn_ratelimited(xhci,
 					"WARN Successful completion on short TX: needs XHCI_TRUST_TX_LENGTH quirk?\n");
+		#endif
 	case COMP_SHORT_TX:
 		break;
 	case COMP_STOP:
@@ -2645,11 +2647,13 @@ static int xhci_handle_event(struct xhci_hcd *xhci)
 	int update_ptrs = 1;
 	int ret;
 
+	printk(" Inside %s  Check 1  \n",__FUNCTION__);
 	if (!xhci->event_ring || !xhci->event_ring->dequeue) {
 		xhci->error_bitmask |= 1 << 1;
 		return 0;
 	}
 
+	printk(" Inside %s  Check 2  \n",__FUNCTION__);
 	event = xhci->event_ring->dequeue;
 	/* Does the HC or OS own the TRB? */
 	if ((le32_to_cpu(event->event_cmd.flags) & TRB_CYCLE) !=
@@ -2658,6 +2662,7 @@ static int xhci_handle_event(struct xhci_hcd *xhci)
 		return 0;
 	}
 
+	printk(" Inside %s  Check 3  \n",__FUNCTION__);
 	/*
 	 * Barrier between reading the TRB_CYCLE (valid) flag above and any
 	 * speculative reads of the event's flags/data below.
@@ -2666,13 +2671,16 @@ static int xhci_handle_event(struct xhci_hcd *xhci)
 	/* FIXME: Handle more event types. */
 	switch ((le32_to_cpu(event->event_cmd.flags) & TRB_TYPE_BITMASK)) {
 	case TRB_TYPE(TRB_COMPLETION):
+		printk(" Inside %s  Check 4a COMAND COMPLETION  \n",__FUNCTION__);
 		handle_cmd_completion(xhci, &event->event_cmd);
 		break;
 	case TRB_TYPE(TRB_PORT_STATUS):
+		printk(" Inside %s  Check 4b PORT STATUS  \n",__FUNCTION__);
 		handle_port_status(xhci, event);
 		update_ptrs = 0;
 		break;
 	case TRB_TYPE(TRB_TRANSFER):
+		printk(" Inside %s  Check 4c TRB TRANSFER  %x \n",__FUNCTION__);
 		ret = handle_tx_event(xhci, &event->trans_event);
 		if (ret < 0)
 			xhci->error_bitmask |= 1 << 9;
@@ -2680,15 +2688,18 @@ static int xhci_handle_event(struct xhci_hcd *xhci)
 			update_ptrs = 0;
 		break;
 	case TRB_TYPE(TRB_DEV_NOTE):
+		printk(" Inside %s  Check 4d  DEV NOTIFICATION \n",__FUNCTION__);
 		handle_device_notification(xhci, event);
 		break;
 	default:
+		printk(" Inside %s  Check 4e  DEFAULT  \n",__FUNCTION__);
 		if ((le32_to_cpu(event->event_cmd.flags) & TRB_TYPE_BITMASK) >=
 		    TRB_TYPE(48))
 			handle_vendor_event(xhci, event);
 		else
 			xhci->error_bitmask |= 1 << 3;
 	}
+		printk(" Inside %s  Check 5   \n",__FUNCTION__);
 	/* Any of the above functions may drop and re-acquire the lock, so check
 	 * to make sure a watchdog timer didn't mark the host as non-responsive.
 	 */
@@ -2698,6 +2709,7 @@ static int xhci_handle_event(struct xhci_hcd *xhci)
 		return 0;
 	}
 
+		printk(" Inside %s  Check 6  \n",__FUNCTION__);
 	if (update_ptrs)
 		/* Update SW event ring dequeue pointer */
 		inc_deq(xhci, xhci->event_ring);
@@ -2705,6 +2717,7 @@ static int xhci_handle_event(struct xhci_hcd *xhci)
 	/* Are there more items on the event ring?  Caller will call us again to
 	 * check.
 	 */
+		printk(" Inside %s  Check 7   \n",__FUNCTION__);
 	return 1;
 }
 
@@ -2721,9 +2734,12 @@ irqreturn_t xhci_irq(struct usb_hcd *hcd)
 	union xhci_trb *event_ring_deq;
 	dma_addr_t deq;
 
+	printk(" Inside %s check 1 XHCI Interrupt handler \n",__FUNCTION__);
 	spin_lock(&xhci->lock);
 	/* Check if the xHC generated the interrupt, or the irq is shared */
 	status = xhci_readl(xhci, &xhci->op_regs->status);
+	printk(" Inside %s check 2 Status reg in Oper = %x \n",__FUNCTION__,status);
+
 	if (status == 0xffffffff)
 		goto hw_died;
 
@@ -2775,7 +2791,9 @@ hw_died:
 	/* FIXME this should be a delayed service routine
 	 * that clears the EHB.
 	 */
+	printk(" Inside %s  Check 3 Event ring DEQ = %x \n",__FUNCTION__,event_ring_deq);
 	while (xhci_handle_event(xhci) > 0) {}
+	printk(" Inside %s  Check 4 Done handle all event \n",__FUNCTION__,event_ring_deq);
 
 	temp_64 = xhci_read_64(xhci, &xhci->ir_set->erst_dequeue);
 	/* If necessary, update the HW's version of the event ring deq ptr. */

@@ -557,6 +557,7 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 	spin_lock_irqsave(&xhci->lock, flags);
 	switch (typeReq) {
 	case GetHubStatus:
+		printk(" %s REG_TYPE = GetHubStatus: \n",__FUNCTION__);
 		/* No power source, over-current reported per port */
 		memset(buf, 0, 4);
 		break;
@@ -565,6 +566,7 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 		 * descriptor for the USB 3.0 roothub.  If not, we stall the
 		 * endpoint, like external hubs do.
 		 */
+		printk(" %s REG_TYPE = GetHubDescriptor: \n",__FUNCTION__);
 		if (hcd->speed == HCD_USB3 &&
 				(wLength < USB_DT_SS_HUB_SIZE ||
 				 wValue != (USB_DT_SS_HUB << 8))) {
@@ -576,6 +578,7 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 				(struct usb_hub_descriptor *) buf);
 		break;
 	case DeviceRequest | USB_REQ_GET_DESCRIPTOR:
+		printk(" %s REG_TYPE = DeviceRequest | USB_REQ_GET_DESCRIPTOR: \n",__FUNCTION__);
 		if ((wValue & 0xff00) != (USB_DT_BOS << 8))
 			goto error;
 
@@ -597,6 +600,7 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 		spin_unlock_irqrestore(&xhci->lock, flags);
 		return USB_DT_BOS_SIZE + USB_DT_USB_SS_CAP_SIZE;
 	case GetPortStatus:
+		printk(" %s REG_TYPE = GetPortStatus: \n",__FUNCTION__);
 		if (!wIndex || wIndex > max_ports)
 			goto error;
 		wIndex--;
@@ -701,6 +705,7 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 		put_unaligned(cpu_to_le32(status), (__le32 *) buf);
 		break;
 	case SetPortFeature:
+		printk(" %s REG_TYPE = SetPortFeature: \n",__FUNCTION__);
 		if (wValue == USB_PORT_FEAT_LINK_STATE)
 			link_state = (wIndex & 0xff00) >> 3;
 		if (wValue == USB_PORT_FEAT_REMOTE_WAKE_MASK)
@@ -720,6 +725,7 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 		/* FIXME: What new port features do we need to support? */
 		switch (wValue) {
 		case USB_PORT_FEAT_SUSPEND:
+			printk(" %s REG_TYPE = SetPortFeature:USB_PORT_FEAT_SUSPEND: \n",__FUNCTION__);
 			temp = xhci_readl(xhci, port_array[wIndex]);
 			if ((temp & PORT_PLS_MASK) != XDEV_U0) {
 				/* Resume the port to U0 first */
@@ -762,6 +768,7 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 			bus_state->suspended_ports |= 1 << wIndex;
 			break;
 		case USB_PORT_FEAT_LINK_STATE:
+			printk(" %s REG_TYPE = SetPortFeature:USB_PORT_FEAT_LINK_STATE:: \n",__FUNCTION__);
 			temp = xhci_readl(xhci, port_array[wIndex]);
 
 			/* Disable port */
@@ -825,6 +832,7 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 				bus_state->suspended_ports |= 1 << wIndex;
 			break;
 		case USB_PORT_FEAT_POWER:
+			printk(" %s REG_TYPE = SetPortFeature:USB_PORT_FEAT_POWER:: \n",__FUNCTION__);
 			/*
 			 * Turn on ports, even if there isn't per-port switching.
 			 * HC will report connect events even before this is set.
@@ -846,6 +854,7 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 			spin_lock_irqsave(&xhci->lock, flags);
 			break;
 		case USB_PORT_FEAT_RESET:
+			printk(" %s REG_TYPE = SetPortFeature:USB_PORT_FEAT_RESET::: \n",__FUNCTION__);
 			temp = (temp | PORT_RESET);
 			xhci_writel(xhci, temp, port_array[wIndex]);
 
@@ -853,6 +862,7 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 			xhci_dbg(xhci, "set port reset, actual port %d status  = 0x%x\n", wIndex, temp);
 			break;
 		case USB_PORT_FEAT_REMOTE_WAKE_MASK:
+			printk(" %s REG_TYPE = SetPortFeature:USB_PORT_FEAT_REMOTE_WAKE_MASK:: \n",__FUNCTION__);
 			xhci_set_remote_wake_mask(xhci, port_array,
 					wIndex, wake_mask);
 			temp = xhci_readl(xhci, port_array[wIndex]);
@@ -861,12 +871,14 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 					wIndex, temp);
 			break;
 		case USB_PORT_FEAT_BH_PORT_RESET:
+			printk(" %s REG_TYPE = SetPortFeature:USB_PORT_FEAT_BH_PORT_RESET: \n",__FUNCTION__);
 			temp |= PORT_WR;
 			xhci_writel(xhci, temp, port_array[wIndex]);
 
 			temp = xhci_readl(xhci, port_array[wIndex]);
 			break;
 		case USB_PORT_FEAT_U1_TIMEOUT:
+			printk(" %s REG_TYPE = SetPortFeature:USB_PORT_FEAT_U1_TIMEOUT: \n",__FUNCTION__);
 			if (hcd->speed != HCD_USB3)
 				goto error;
 			temp = xhci_readl(xhci, port_array[wIndex] + 1);
@@ -875,6 +887,7 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 			xhci_writel(xhci, temp, port_array[wIndex] + 1);
 			break;
 		case USB_PORT_FEAT_U2_TIMEOUT:
+			printk(" %s REG_TYPE = SetPortFeature:USB_PORT_FEAT_U2_TIMEOUT: \n",__FUNCTION__);
 			if (hcd->speed != HCD_USB3)
 				goto error;
 			temp = xhci_readl(xhci, port_array[wIndex] + 1);
@@ -889,6 +902,7 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 		temp = xhci_readl(xhci, port_array[wIndex]);
 		break;
 	case ClearPortFeature:
+		printk(" %s REG_TYPE = ClearPortFeature \n",__FUNCTION__);
 		if (!wIndex || wIndex > max_ports)
 			goto error;
 		wIndex--;
@@ -901,6 +915,7 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 		temp = xhci_port_state_to_neutral(temp);
 		switch (wValue) {
 		case USB_PORT_FEAT_SUSPEND:
+			printk(" %s REG_TYPE = ClearPortFeature::USB_PORT_FEAT_SUSPEND: \n",__FUNCTION__);
 			temp = xhci_readl(xhci, port_array[wIndex]);
 			xhci_dbg(xhci, "clear USB_PORT_FEAT_SUSPEND\n");
 			xhci_dbg(xhci, "PORTSC %04x\n", temp);
@@ -929,21 +944,30 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 			xhci_ring_device(xhci, slot_id);
 			break;
 		case USB_PORT_FEAT_C_SUSPEND:
+			printk(" %s REG_TYPE = ClearPortFeature::USB_PORT_FEAT_C_SUSPEND:: \n",__FUNCTION__);
 			bus_state->port_c_suspend &= ~(1 << wIndex);
 		case USB_PORT_FEAT_C_RESET:
+			printk(" %s REG_TYPE = ClearPortFeature::USB_PORT_FEAT_C_RESET: \n",__FUNCTION__);
 		case USB_PORT_FEAT_C_BH_PORT_RESET:
+			printk(" %s REG_TYPE = ClearPortFeature::USB_PORT_FEAT_C_BH_PORT_RESET:: \n",__FUNCTION__);
 		case USB_PORT_FEAT_C_CONNECTION:
+			printk(" %s REG_TYPE = ClearPortFeature::USB_PORT_FEAT_C_CONNECTION::: \n",__FUNCTION__);
 		case USB_PORT_FEAT_C_OVER_CURRENT:
+			printk(" %s REG_TYPE = ClearPortFeature::USB_PORT_FEAT_C_OVER_CURRENT:: \n",__FUNCTION__);
 		case USB_PORT_FEAT_C_ENABLE:
+			printk(" %s REG_TYPE = ClearPortFeature::USB_PORT_FEAT_C_ENABLE:: \n",__FUNCTION__);
 		case USB_PORT_FEAT_C_PORT_LINK_STATE:
+			printk(" %s REG_TYPE = ClearPortFeature::USB_PORT_FEAT_C_PORT_LINK_STATE:: \n",__FUNCTION__);
 			xhci_clear_port_change_bit(xhci, wValue, wIndex,
 					port_array[wIndex], temp);
 			break;
 		case USB_PORT_FEAT_ENABLE:
+			printk(" %s REG_TYPE = ClearPortFeature::USB_PORT_FEAT_ENABLE:: \n",__FUNCTION__);
 			xhci_disable_port(hcd, xhci, wIndex,
 					port_array[wIndex], temp);
 			break;
 		case USB_PORT_FEAT_POWER:
+			printk(" %s REG_TYPE = ClearPortFeature::USB_PORT_FEAT_POWER:: \n",__FUNCTION__);
 			xhci_writel(xhci, temp & ~PORT_POWER,
 				port_array[wIndex]);
 
