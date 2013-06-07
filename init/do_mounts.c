@@ -523,8 +523,10 @@ void __init mount_root(void)
 	}
 #endif
 #ifdef CONFIG_BLOCK
+#if 0
 	create_dev("/dev/root", ROOT_DEV);
 	mount_block_root("/dev/root", root_mountflags);
+#endif
 #endif
 }
 

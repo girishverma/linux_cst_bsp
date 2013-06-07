@@ -178,6 +178,7 @@ static int usb_stor_msg_common(struct us_data *us, int timeout)
 	clear_bit(US_FLIDX_URB_ACTIVE, &us->dflags);
 
 	if (timeleft <= 0) {
+		printk(" usb_stor_msg_common SCSI URB Fail Timeout \n"); 
 		usb_stor_dbg(us, "%s -- cancelling URB\n",
 			     timeleft == 0 ? "Timeout" : "Signal");
 		usb_kill_urb(us->current_urb);
@@ -239,12 +240,14 @@ int usb_stor_clear_halt(struct us_data *us, unsigned int pipe)
 
 	if (usb_pipein (pipe))
 		endp |= USB_DIR_IN;
+	printk(" usb_stor_clear_halt callend to clear HALT EP \n");
 
 	result = usb_stor_control_msg(us, us->send_ctrl_pipe,
 		USB_REQ_CLEAR_FEATURE, USB_RECIP_ENDPOINT,
 		USB_ENDPOINT_HALT, endp,
-		NULL, 0, 3*HZ);
+		NULL, 0, 3000*HZ);
 
+	printk(" usb_stor_clear_halt RESULT = %d \n",result);
 	if (result >= 0)
 		usb_reset_endpoint(us->pusb_dev, endp);
 

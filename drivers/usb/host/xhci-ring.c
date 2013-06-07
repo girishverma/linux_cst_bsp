@@ -67,6 +67,7 @@
 #include <linux/scatterlist.h>
 #include <linux/slab.h>
 #include "xhci.h"
+//#define xhci_dbg xhci_warn
 
 static int handle_cmd_in_cmd_wait_list(struct xhci_hcd *xhci,
 		struct xhci_virt_device *virt_dev,
@@ -568,6 +569,7 @@ void xhci_find_new_dequeue_state(struct xhci_hcd *xhci,
 	xhci_dbg(xhci, "Finding endpoint context\n");
 	ep_ctx = xhci_get_ep_ctx(xhci, dev->out_ctx, ep_index);
 	state->new_cycle_state = 0x1 & le64_to_cpu(ep_ctx->deq);
+	//xhci_warn(xhci, "OLD cycle State %x DEG = %x , LE64 DEQ = %x \n",state->new_cycle_state,ep_ctx->deq,le64_to_cpu(ep_ctx->deq));
 
 	state->new_deq_ptr = cur_td->last_trb;
 	xhci_dbg(xhci, "Finding segment containing last TRB in TD.\n");
@@ -594,10 +596,16 @@ void xhci_find_new_dequeue_state(struct xhci_hcd *xhci,
 	 * question.  Look for the one-segment case where stalled TRB's address
 	 * is greater than the new dequeue pointer address.
 	 */
+	//xhci_warn(xhci, "STOP TRB = %x state->new_deq_pt = %x \n", dev->eps[ep_index].stopped_trb,state->new_deq_ptr);
 	if (ep_ring->first_seg == ep_ring->first_seg->next &&
-			state->new_deq_ptr < dev->eps[ep_index].stopped_trb)
+			state->new_deq_ptr < dev->eps[ep_index].stopped_trb){
 		state->new_cycle_state ^= 0x1;
+	//	xhci_warn(xhci, "INSIDE Cycle state = 0x%x\n", state->new_cycle_state);
+	}
+	else {
+	}
 	xhci_dbg(xhci, "Cycle state = 0x%x\n", state->new_cycle_state);
+//	xhci_warn(xhci, "Cycle state = 0x%x\n", state->new_cycle_state);
 
 	/* Don't update the ring cycle state for the producer (us). */
 	xhci_dbg(xhci, "New dequeue segment = %p (virtual)\n",
@@ -605,6 +613,7 @@ void xhci_find_new_dequeue_state(struct xhci_hcd *xhci,
 	addr = xhci_trb_virt_to_dma(state->new_deq_seg, state->new_deq_ptr);
 	xhci_dbg(xhci, "New dequeue pointer = 0x%llx (DMA)\n",
 			(unsigned long long) addr);
+	//xhci_warn(xhci, "NEW cycle State %x \n",state->new_cycle_state);
 }
 
 /* flip_cycle means flip the cycle bit of all but the first and last TRB.
@@ -1125,6 +1134,9 @@ static void handle_set_deq_completion(struct xhci_hcd *xhci,
 		} else {
 			xhci_warn(xhci, "Mismatch between completed Set TR Deq "
 					"Ptr command & xHCI internal state.\n");
+			xhci_warn(xhci, "expected = %p Got = %x ep_ctx = %x slot context = %x \n",
+					xhci_trb_virt_to_dma(dev->eps[ep_index].queued_deq_seg,dev->eps[ep_index].queued_deq_ptr),
+					(le64_to_cpu(ep_ctx->deq) & ~(EP_CTX_CYCLE_MASK)), ep_ctx, slot_ctx);
 			xhci_warn(xhci, "ep deq seg = %p, deq ptr = %p\n",
 					dev->eps[ep_index].queued_deq_seg,
 					dev->eps[ep_index].queued_deq_ptr);
@@ -2647,13 +2659,13 @@ static int xhci_handle_event(struct xhci_hcd *xhci)
 	int update_ptrs = 1;
 	int ret;
 
-	printk(" Inside %s  Check 1  \n",__FUNCTION__);
+	//printk(" Inside %s  Check 1  \n",__FUNCTION__);
 	if (!xhci->event_ring || !xhci->event_ring->dequeue) {
 		xhci->error_bitmask |= 1 << 1;
 		return 0;
 	}
 
-	printk(" Inside %s  Check 2  \n",__FUNCTION__);
+	//printk(" Inside %s  Check 2  \n",__FUNCTION__);
 	event = xhci->event_ring->dequeue;
 	/* Does the HC or OS own the TRB? */
 	if ((le32_to_cpu(event->event_cmd.flags) & TRB_CYCLE) !=
@@ -2662,7 +2674,7 @@ static int xhci_handle_event(struct xhci_hcd *xhci)
 		return 0;
 	}
 
-	printk(" Inside %s  Check 3  \n",__FUNCTION__);
+	//printk(" Inside %s  Check 3  \n",__FUNCTION__);
 	/*
 	 * Barrier between reading the TRB_CYCLE (valid) flag above and any
 	 * speculative reads of the event's flags/data below.
@@ -2671,16 +2683,16 @@ static int xhci_handle_event(struct xhci_hcd *xhci)
 	/* FIXME: Handle more event types. */
 	switch ((le32_to_cpu(event->event_cmd.flags) & TRB_TYPE_BITMASK)) {
 	case TRB_TYPE(TRB_COMPLETION):
-		printk(" Inside %s  Check 4a COMAND COMPLETION  \n",__FUNCTION__);
+		//printk(" Inside %s  Check 4a COMAND COMPLETION  \n",__FUNCTION__);
 		handle_cmd_completion(xhci, &event->event_cmd);
 		break;
 	case TRB_TYPE(TRB_PORT_STATUS):
-		printk(" Inside %s  Check 4b PORT STATUS  \n",__FUNCTION__);
+		//printk(" Inside %s  Check 4b PORT STATUS  \n",__FUNCTION__);
 		handle_port_status(xhci, event);
 		update_ptrs = 0;
 		break;
 	case TRB_TYPE(TRB_TRANSFER):
-		printk(" Inside %s  Check 4c TRB TRANSFER  %x \n",__FUNCTION__);
+		//printk(" Inside %s  Check 4c TRB TRANSFER  %x \n",__FUNCTION__);
 		ret = handle_tx_event(xhci, &event->trans_event);
 		if (ret < 0)
 			xhci->error_bitmask |= 1 << 9;
@@ -2688,18 +2700,18 @@ static int xhci_handle_event(struct xhci_hcd *xhci)
 			update_ptrs = 0;
 		break;
 	case TRB_TYPE(TRB_DEV_NOTE):
-		printk(" Inside %s  Check 4d  DEV NOTIFICATION \n",__FUNCTION__);
+		//printk(" Inside %s  Check 4d  DEV NOTIFICATION \n",__FUNCTION__);
 		handle_device_notification(xhci, event);
 		break;
 	default:
-		printk(" Inside %s  Check 4e  DEFAULT  \n",__FUNCTION__);
+		//printk(" Inside %s  Check 4e  DEFAULT  \n",__FUNCTION__);
 		if ((le32_to_cpu(event->event_cmd.flags) & TRB_TYPE_BITMASK) >=
 		    TRB_TYPE(48))
 			handle_vendor_event(xhci, event);
 		else
 			xhci->error_bitmask |= 1 << 3;
 	}
-		printk(" Inside %s  Check 5   \n",__FUNCTION__);
+		//printk(" Inside %s  Check 5   \n",__FUNCTION__);
 	/* Any of the above functions may drop and re-acquire the lock, so check
 	 * to make sure a watchdog timer didn't mark the host as non-responsive.
 	 */
@@ -2709,7 +2721,7 @@ static int xhci_handle_event(struct xhci_hcd *xhci)
 		return 0;
 	}
 
-		printk(" Inside %s  Check 6  \n",__FUNCTION__);
+		//printk(" Inside %s  Check 6  \n",__FUNCTION__);
 	if (update_ptrs)
 		/* Update SW event ring dequeue pointer */
 		inc_deq(xhci, xhci->event_ring);
@@ -2717,7 +2729,7 @@ static int xhci_handle_event(struct xhci_hcd *xhci)
 	/* Are there more items on the event ring?  Caller will call us again to
 	 * check.
 	 */
-		printk(" Inside %s  Check 7   \n",__FUNCTION__);
+		//printk(" Inside %s  Check 7   \n",__FUNCTION__);
 	return 1;
 }
 
@@ -2734,11 +2746,11 @@ irqreturn_t xhci_irq(struct usb_hcd *hcd)
 	union xhci_trb *event_ring_deq;
 	dma_addr_t deq;
 
-	printk(" Inside %s check 1 XHCI Interrupt handler \n",__FUNCTION__);
+	//printk(" Inside %s check 1 XHCI Interrupt handler \n",__FUNCTION__);
 	spin_lock(&xhci->lock);
 	/* Check if the xHC generated the interrupt, or the irq is shared */
 	status = xhci_readl(xhci, &xhci->op_regs->status);
-	printk(" Inside %s check 2 Status reg in Oper = %x \n",__FUNCTION__,status);
+	//printk(" Inside %s check 2 Status reg in Oper = %x \n",__FUNCTION__,status);
 
 	if (status == 0xffffffff)
 		goto hw_died;
@@ -2791,9 +2803,9 @@ hw_died:
 	/* FIXME this should be a delayed service routine
 	 * that clears the EHB.
 	 */
-	printk(" Inside %s  Check 3 Event ring DEQ = %x \n",__FUNCTION__,event_ring_deq);
+	//printk(" Inside %s  Check 3 Event ring DEQ = %x \n",__FUNCTION__,event_ring_deq);
 	while (xhci_handle_event(xhci) > 0) {}
-	printk(" Inside %s  Check 4 Done handle all event \n",__FUNCTION__,event_ring_deq);
+	//printk(" Inside %s  Check 4 Done handle all event \n",__FUNCTION__,event_ring_deq);
 
 	temp_64 = xhci_read_64(xhci, &xhci->ir_set->erst_dequeue);
 	/* If necessary, update the HW's version of the event ring deq ptr. */
@@ -2854,6 +2866,7 @@ static int prepare_ring(struct xhci_hcd *xhci, struct xhci_ring *ep_ring,
 {
 	unsigned int num_trbs_needed;
 
+	//printk(" prepare_ring :  Check 1  ep_state = %d \n",ep_state);
 	/* Make sure the endpoint has been added to xHC schedule */
 	switch (ep_state) {
 	case EP_STATE_DISABLED:
@@ -2949,6 +2962,7 @@ static int prepare_transfer(struct xhci_hcd *xhci,
 	struct xhci_ring *ep_ring;
 	struct xhci_ep_ctx *ep_ctx = xhci_get_ep_ctx(xhci, xdev->out_ctx, ep_index);
 
+	//printk(" prepare_transfer :  Check 1  ep_index = %x \n",ep_index);
 	ep_ring = xhci_stream_id_to_ring(xdev, ep_index, stream_id);
 	if (!ep_ring) {
 		xhci_dbg(xhci, "Can't prepare ring for bad stream ID %u\n",
@@ -2956,11 +2970,17 @@ static int prepare_transfer(struct xhci_hcd *xhci,
 		return -EINVAL;
 	}
 
+	//printk(" prepare_transfer :  Check 2  ep_ring->enq_seg = %x ep_ring->enqueue = %x ep_ring->cycle_state = %x \n", \
+	//	ep_ring->enq_seg, ep_ring->enqueue, ep_ring->cycle_state );
+
 	ret = prepare_ring(xhci, ep_ring,
 			   le32_to_cpu(ep_ctx->ep_info) & EP_STATE_MASK,
 			   num_trbs, mem_flags);
 	if (ret)
 		return ret;
+
+	//printk(" prepare_transfer :  Check 3   ep_ring->enq_seg = %x ep_ring->enqueue = %x ep_ring->cycle_state = %x \n", \
+	//	ep_ring->enq_seg, ep_ring->enqueue, ep_ring->cycle_state );
 
 	urb_priv = urb->hcpriv;
 	td = urb_priv->td[td_index];
@@ -3357,6 +3377,7 @@ int xhci_queue_bulk_tx(struct xhci_hcd *xhci, gfp_t mem_flags,
 	start_trb = &ep_ring->enqueue->generic;
 	start_cycle = ep_ring->cycle_state;
 
+	//printk(" xhci_queue_bulk_tx :  Check 1  ep_ring->cycle_state = %x \n",ep_ring->cycle_state);
 	running_total = 0;
 	total_packet_count = DIV_ROUND_UP(urb->transfer_buffer_length,
 			usb_endpoint_maxp(&urb->ep->desc));
@@ -3998,6 +4019,8 @@ static int queue_set_tr_deq(struct xhci_hcd *xhci, int slot_id,
 	struct xhci_virt_ep *ep;
 
 	addr = xhci_trb_virt_to_dma(deq_seg, deq_ptr);
+	//printk(" In queue_set_tr_deq with slot_id = %d , ep_index = %d , stream_id = 0x%x , deq_seg = 0x%x deq_ptr = 0x%x addr = %x cycle_state = %d ",\
+		slot_id,ep_index,stream_id,deq_seg,deq_ptr,addr,cycle_state);
 	if (addr == 0) {
 		xhci_warn(xhci, "WARN Cannot submit Set TR Deq Ptr\n");
 		xhci_warn(xhci, "WARN deq seg = %p, deq pt = %p\n",
