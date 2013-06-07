@@ -281,7 +281,7 @@ static inline void mcf_outsw(void *a, unsigned char *p, int l)
 
 #define SMC_CAN_USE_8BIT	1
 #define SMC_CAN_USE_16BIT	1
-#define SMC_CAN_USE_32BIT	1
+#define SMC_CAN_USE_32BIT	0
 #define SMC_NOWAIT		1
 
 #define SMC_IO_SHIFT		(lp->io_shift)

@@ -65,6 +65,7 @@ static const char version[] =
 #define SMC_DEBUG		0
 #endif
 
+#define CST_CHANGE
 
 #include <linux/init.h>
 #include <linux/module.h>
@@ -567,6 +568,7 @@ static void smc_hardware_send_pkt(unsigned long data)
 	lp->pending_tx_skb = NULL;
 
 	packet_no = SMC_GET_AR(lp);
+	//printk("%s: PACCKKKEEETTT = %x \n", dev->name,packet_no);
 	if (unlikely(packet_no & AR_FAILED)) {
 		printk("%s: Memory allocation failed.\n", dev->name);
 		dev->stats.tx_errors++;
@@ -873,6 +875,9 @@ static void smc_phy_detect(struct net_device *dev)
 
 	DBG(2, "%s: %s\n", dev->name, __func__);
 
+#ifdef CST_CHANGE
+    lp->phy_type = 1;
+#else
 	lp->phy_type = 0;
 
 	/*
@@ -898,6 +903,7 @@ static void smc_phy_detect(struct net_device *dev)
 			break;
 		}
 	}
+#endif
 }
 
 /*
@@ -1980,7 +1986,16 @@ static int smc_probe(struct net_device *dev, void __iomem *ioaddr,
 	dev->ethtool_ops = &smc_ethtool_ops;
 
 	tasklet_init(&lp->tx_task, smc_hardware_send_pkt, (unsigned long)dev);
+#ifdef CST_CHANGE
+    // Phy address 1
+    lp->phy_type=0x1;
+	lp->ctl_rfduplx = 1;
+	lp->ctl_rspeed = 100;
+    lp->mii.force_media = 1;
+
+#else
 	INIT_WORK(&lp->phy_configure, smc_phy_configure);
+#endif
 	lp->dev = dev;
 	lp->mii.phy_id_mask = 0x1f;
 	lp->mii.reg_num_mask = 0x1f;

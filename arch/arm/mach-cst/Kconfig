@@ -6,6 +6,7 @@ config ARCH_CST_CB
 	default y
 	select CPU_V7
 	select USB_ARCH_HAS_XHCI
+	select NETDEVICES
 	help
 	  Include support for the Custom Virtual Platform with ARM cortex-A9 core.
 endmenu
