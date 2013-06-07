@@ -62,7 +62,7 @@ static const char version[] =
 
 /* Debugging level */
 #ifndef SMC_DEBUG
-#define SMC_DEBUG		5
+#define SMC_DEBUG		0
 #endif
 
 #define CST_CHANGE
@@ -568,6 +568,7 @@ static void smc_hardware_send_pkt(unsigned long data)
 	lp->pending_tx_skb = NULL;
 
 	packet_no = SMC_GET_AR(lp);
+	//printk("%s: PACCKKKEEETTT = %x \n", dev->name,packet_no);
 	if (unlikely(packet_no & AR_FAILED)) {
 		printk("%s: Memory allocation failed.\n", dev->name);
 		dev->stats.tx_errors++;
