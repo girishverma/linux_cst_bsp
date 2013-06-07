@@ -11,7 +11,9 @@
 #include <linux/of_address.h>
 #include <linux/of_platform.h>
 #include <linux/amba/bus.h>
+#include <linux/amba/clcd.h>
 #include <linux/clkdev.h>
+#include <linux/dma-mapping.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -26,3 +28,4 @@
 
 #include <mach/platform.h>
 #include <mach/hardware.h>
+#include <mach/clcd.h>
