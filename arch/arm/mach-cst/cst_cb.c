@@ -31,10 +31,35 @@ static struct map_desc cst_cb_io_desc[] __initdata = { {
 		.type		= MT_DEVICE
 	},
 };
+
 void __init cst_cb_map_io(void) {
     iotable_init(cst_cb_io_desc, ARRAY_SIZE(cst_cb_io_desc));
 }
 
+static int cst_cb_clcd_setup(struct clcd_fb *fb)
+{
+	unsigned long framesize = 1024 * 768 * 2;
+
+        fb->panel = cst_cb_clcd_get_panel("XVGA");
+        if (!fb->panel)
+                return -EINVAL;
+
+        return cst_cb_clcd_setup_dma(fb, framesize);
+}
+
+static int cst_cb_clcd_remove(struct clcd_fb *fb)
+{
+return 0;
+}
+
+static struct clcd_board cst_cb_clcdc_data = {
+        .name           = "CST-CLCDC",
+        .decode         = clcdfb_decode,
+	.check          = clcdfb_check,
+        .setup          = cst_cb_clcd_setup,
+//        .mmap           = cst_cb_clcd_mmap_dma,
+        .remove         = cst_cb_clcd_remove,
+};
 
 // Device registration on amba bus.
 static AMBA_APB_DEVICE(rtc,
@@ -47,9 +72,13 @@ static AMBA_APB_DEVICE(uart0,
                        0,
                        CST_CB_UART_0_BASE, {INTR_UART_0},
                        NULL);
+
+static AMBA_AHB_DEVICE(clcdc, "clcd-pl11x", 0, CST_CB_CLCDC_BASE,{INTR_CLCDC}, &cst_cb_clcdc_data);
+
 static struct amba_device *amba_devices[] __initdata = {
 	&uart0_device,
 	&rtc_device,
+	&clcdc_device,
 };
 
 #define XHCI_USB_DEVICE_SUPPORTED      	   256
@@ -71,6 +100,7 @@ static struct amba_device *amba_devices[] __initdata = {
 #define CST_SMC91C111_BASE_ADDRESS  0x101e9000
 #define CST_SMC91C111_END_ADDRESS   0x101e9400
 #define CST_SMC91C111_IRQ           (32 +15) // Using GIC
+
 
 static struct resource cst_xhci_resources[] = {
         [0] = {
@@ -101,6 +131,7 @@ static struct resource smc91c111_resources[] = {
                 .flags  = IORESOURCE_IRQ,
         },
 };
+
 static void cst_xhci_release(struct device *dev) {
 
 }
@@ -133,9 +164,30 @@ static struct platform_device smc_91c111_pdev = {
 };
 
 
+static int cst_cb_of_amba_notify(struct notifier_block *nb, unsigned long action,
+		void *data)
+{
+	struct device *dev = data;
+
+	/* We are only intereted in device addition */
+	if (action != BUS_NOTIFY_ADD_DEVICE)
+		return 0;
+
+	if (!of_find_compatible_node(NULL, NULL, "NULL,NULL,NULL"))
+		return 0;
+
+	if (of_device_is_compatible(dev->of_node, "arm,pl111"))
+ 	dev->platform_data = &cst_cb_clcdc_data;
+
+	return 0;
+}
+
+static struct notifier_block cst_cb_amba_nb = {
+	.notifier_call = cst_cb_of_amba_notify,
+};
+
 void __init cst_cb_init(void) {
 	int i;
-	int ret;
 
 	for (i = 0; i < ARRAY_SIZE(amba_devices); i++) {
 		struct amba_device *d = amba_devices[i];
@@ -147,6 +199,13 @@ void __init cst_cb_init(void) {
 	if ((platform_device_register(&smc_91c111_pdev)) < 0) {
 		printk(" SMC 91C111  Platform device register Fail \n");
 	}
+
+	/* some devices need to hook platform_data */
+	/* Register callbacks on OF amba device addition/removal
+	 * to handle linking them to the right platform_data
+	 */
+	bus_register_notifier(&amba_bustype, &cst_cb_amba_nb);
+
 }
 
 
@@ -219,6 +278,8 @@ void __init cst_cb_timer_init(void) {
     // Free Running Timer as Clock Source and Scheduler Source.
 	sp804_clockevents_init(VA_TIMER_0_BASE, INTR_TIMER_0, "timer0");
 }
+
+
 // MACHINE CALLBACKS.
 MACHINE_START(CST_CB, "CircuitSutra Custom_Board")
 	.atag_offset	= 0x100,
@@ -226,6 +287,6 @@ MACHINE_START(CST_CB, "CircuitSutra Custom_Board")
 	.init_early	    = cst_cb_init_early,
 	.init_irq	    = cst_cb_init_irq,
 	.init_time	    = cst_cb_timer_init,
-	.init_machine	= cst_cb_init,
+	.init_machine	    = cst_cb_init,
 	.restart	    = NULL,
 MACHINE_END
