@@ -98,7 +98,7 @@ static struct amba_device *amba_devices[] __initdata = {
 
 
 #define CST_SMC91C111_BASE_ADDRESS  0x101e9000
-#define CST_SMC91C111_END_ADDRESS   0x101e9400
+#define CST_SMC91C111_END_ADDRESS   0x101e9fff
 #define CST_SMC91C111_IRQ           (32 +15) // Using GIC
 
 
