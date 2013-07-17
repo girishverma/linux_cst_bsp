@@ -2,6 +2,7 @@
 #define CST_CB_SP804_0_BASE     0x101E2000
 #define CST_CB_UART_0_BASE      0x101F1000
 #define CST_CB_RTC_BASE         0x101E8000
+#define CST_CB_CLCDC_BASE       0x20000000
 
 #define VA_RTC_BASE     __io_address(CST_CB_RTC_BASE)
 #define VA_VIC_BASE		__io_address(CST_CB_VIC_BASE)

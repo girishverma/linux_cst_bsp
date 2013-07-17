@@ -298,7 +298,7 @@ static int clcdfb_set_par(struct fb_info *info)
 
 	clcdfb_set_start(fb);
 
-	clk_set_rate(fb->clk, (1000000000 / regs.pixclock) * 1000);
+	//clk_set_rate(fb->clk, (1000000000 / regs.pixclock) * 1000);
 
 	fb->clcd_cntl = regs.cntl;
 
@@ -432,7 +432,7 @@ static int clcdfb_register(struct clcd_fb *fb)
 		fb->off_ienb = CLCD_PL111_IENB;
 		fb->off_cntl = CLCD_PL111_CNTL;
 	} else {
-#ifdef CONFIG_ARCH_VERSATILE
+#ifdef CONFIG_ARCH_VERSATILE || CONFIG_ARCH_CST
 		fb->off_ienb = CLCD_PL111_IENB;
 		fb->off_cntl = CLCD_PL111_CNTL;
 #else
@@ -440,7 +440,7 @@ static int clcdfb_register(struct clcd_fb *fb)
 		fb->off_cntl = CLCD_PL110_CNTL;
 #endif
 	}
-
+#if 0
 	fb->clk = clk_get(&fb->dev->dev, NULL);
 	if (IS_ERR(fb->clk)) {
 		ret = PTR_ERR(fb->clk);
@@ -448,9 +448,10 @@ static int clcdfb_register(struct clcd_fb *fb)
 	}
 
 	ret = clk_prepare(fb->clk);
-	if (ret)
+	if (ret) {
 		goto free_clk;
-
+	}
+#endif
 	fb->fb.device		= &fb->dev->dev;
 
 	fb->fb.fix.mmio_start	= fb->dev->res.start;
@@ -508,12 +509,14 @@ static int clcdfb_register(struct clcd_fb *fb)
 	 */
 	clcdfb_set_bitfields(fb, &fb->fb.var);
 
+
 	/*
 	 * Allocate colourmap.
 	 */
 	ret = fb_alloc_cmap(&fb->fb.cmap, 256, 0);
-	if (ret)
+	if (ret) {
 		goto unmap;
+	}
 
 	/*
 	 * Ensure interrupts are disabled.
@@ -526,8 +529,9 @@ static int clcdfb_register(struct clcd_fb *fb)
 	         fb->board->name, fb->panel->mode.name);
 
 	ret = register_framebuffer(&fb->fb);
-	if (ret == 0)
+	if (ret == 0) {
 		goto out;
+	}
 
 	printk(KERN_ERR "CLCD: cannot register framebuffer (%d)\n", ret);
 
