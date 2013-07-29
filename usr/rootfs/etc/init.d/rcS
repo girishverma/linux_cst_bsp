@@ -8,7 +8,7 @@ mount -t devpts devpts /dev/pts
 echo /sbin/mdev > /proc/sys/kernel/hotplug
 mdev -s
 hostname cst_demo
-#ifconfig eth0 10.0.0.2 up
-#route add default gw 10.0.0.1
+ifconfig eth0 10.0.0.2 netmask 255.255.255.0 up
+route add default gw 10.0.0.1
 #ping 10.0.0.1 -c 1
 #mount -t devtmpfs devtmpfs /dev
